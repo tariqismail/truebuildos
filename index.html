@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrueBuild OS — The AI Operations Command Center for design & construction</title>
+<meta name="description" content="TrueBuild OS by True Build Design: capture work from any channel, let AI triage it, surface what needs you, recommend the next move, and remember every decision. The AI operations command center for the built environment.">
+<meta property="og:title" content="TrueBuild OS — AI Operations Command Center">
+<meta property="og:description" content="One spine. Every channel. AI that turns the chaos of a job site into a structured, queryable, self-improving operating system.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     TrueBuild OS — design tokens (DESIGN.md)
+     ============================================================ */
+  :root{
+    --black:#2E2C29; --black-2:#35322E; --black-3:#26241F;
+    --chalk:#F8F6F3; --chalk-2:#FEFDFB;
+    --gold:#C3A575; --gold-soft:#D8C3A0; --gold-deep:#A8854F;
+    --stone:#D6CFC4; --taupe:#8C8478; --bronze:#6B5D4E;
+    --ink:#2E2C29; --ink-soft:#5A554E;
+    --danger:#C0392B; --ok:#6F8F6B; --warn:#B8893D; --info:#5E7A8C;
+    --f-disp:"Cormorant Garamond",Georgia,serif;
+    --f-ui:"Inter",system-ui,-apple-system,sans-serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+    --maxw:1140px; --r:5px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--f-ui);color:var(--ink);background:var(--chalk);line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+  ::selection{background:var(--gold);color:#fff}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
+  h1,h2,h3{font-family:var(--f-disp);font-weight:600;line-height:1.06;letter-spacing:-0.012em}
+  .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:500}
+  .mono{font-family:var(--f-mono)}
+  .meta{font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;color:var(--taupe)}
+  .lead{font-size:clamp(18px,2.2vw,22px);color:var(--ink-soft);font-weight:300;max-width:60ch}
+  a{color:inherit;text-decoration:none}
+
+  section{padding:clamp(74px,9vw,128px) 0;position:relative}
+  .section-head{max-width:66ch;margin-bottom:54px}
+  .section-head h2{font-size:clamp(33px,4.7vw,54px);margin:14px 0 18px}
+  .section-head p{font-size:clamp(16px,1.7vw,19px);color:var(--ink-soft);font-weight:300}
+  .dark{background:var(--black);color:var(--chalk)}
+  .dark h1,.dark h2,.dark h3{color:var(--chalk)}
+  .dark .section-head p,.dark .lead{color:rgba(248,246,243,.74)}
+  .dark .meta{color:rgba(248,246,243,.55)}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .reveal[data-d="1"]{transition-delay:.08s}.reveal[data-d="2"]{transition-delay:.16s}
+  .reveal[data-d="3"]{transition-delay:.24s}.reveal[data-d="4"]{transition-delay:.32s}
+  .reveal[data-d="5"]{transition-delay:.40s}.reveal[data-d="6"]{transition-delay:.48s}
+  @media (prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    *{animation:none!important}
+  }
+
+  /* sticky mini nav */
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:14px 32px;background:rgba(46,44,41,0);backdrop-filter:blur(0);transition:background .4s ease,backdrop-filter .4s ease,padding .4s ease;pointer-events:none}
+  .topbar.solid{background:rgba(38,36,31,.86);backdrop-filter:blur(12px);padding:11px 32px;pointer-events:auto;border-bottom:1px solid rgba(214,207,196,.12)}
+  .topbar .tb-brand{display:flex;align-items:center;gap:10px;opacity:0;transition:opacity .4s ease}
+  .topbar.solid .tb-brand{opacity:1}
+  .topbar .tb-brand .mark{width:22px;height:22px;color:var(--gold)}
+  .topbar .tb-brand .name{font-family:var(--f-disp);font-size:17px;color:var(--chalk)}
+  .topbar .tb-brand .name b{color:var(--gold);font-weight:600}
+  .topbar .tb-links{display:flex;gap:24px;opacity:0;transition:opacity .4s ease}
+  .topbar.solid .tb-links{opacity:1}
+  .topbar .tb-links a{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(248,246,243,.66)}
+  .topbar .tb-links a:hover{color:var(--gold)}
+  @media(max-width:740px){.topbar .tb-links{display:none}}
+
+  /* progress bar */
+  .scrollbar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--gold-deep),var(--gold-soft));z-index:60;transition:width .1s linear}
+
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero{background:var(--black);color:var(--chalk);min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .hero-bg svg{width:100%;height:100%}
+  .hero-grid{position:absolute;inset:0;background-image:
+      linear-gradient(rgba(195,165,117,.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(195,165,117,.05) 1px,transparent 1px);
+    background-size:60px 60px;mask-image:radial-gradient(ellipse 85% 75% at 72% 32%,#000 30%,transparent 78%);z-index:0}
+  .hero-glow{position:absolute;width:60vw;height:60vw;right:-10vw;top:-12vw;background:radial-gradient(circle,rgba(195,165,117,.13),transparent 62%);z-index:0;animation:breathe 9s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
+
+  .hero-nav{display:flex;align-items:center;justify-content:space-between;padding:26px 32px;position:relative;z-index:3;max-width:var(--maxw);margin:0 auto;width:100%}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mark{width:30px;height:30px;color:var(--gold);display:block}
+  .brand .name{font-family:var(--f-disp);font-size:22px;font-weight:600}
+  .brand .name b{color:var(--gold);font-weight:600}
+  .hero-nav .loc{font-family:var(--f-mono);font-size:11px;letter-spacing:.18em;color:rgba(248,246,243,.5);text-transform:uppercase}
+  .hero-body{flex:1;display:flex;align-items:center;position:relative;z-index:2;padding:36px 0 90px}
+  .hero-body .wrap{width:100%}
+  .hero .eyebrow{opacity:0;animation:fadeUp .8s .15s forwards}
+  .hero h1{font-size:clamp(48px,9vw,118px);line-height:.95;margin:20px 0 8px;letter-spacing:-.03em;opacity:0;animation:fadeUp .9s .28s forwards}
+  .hero h1 .os{color:var(--gold);font-style:italic;font-weight:500}
+  .hero .sub-h{font-family:var(--f-disp);font-style:italic;font-size:clamp(20px,3vw,34px);color:var(--gold-soft);font-weight:500;margin-bottom:26px;opacity:0;animation:fadeUp .9s .42s forwards}
+  .hero .lead{color:rgba(248,246,243,.84);font-size:clamp(18px,2.3vw,24px);max-width:34ch;opacity:0;animation:fadeUp .9s .55s forwards}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .hero .chips{margin-top:40px;padding-top:24px;border-top:1px solid rgba(214,207,196,.18);display:flex;flex-wrap:wrap;gap:26px;max-width:780px;opacity:0;animation:fadeUp .9s .7s forwards}
+  .hero .chips span{font-family:var(--f-mono);font-size:13px;letter-spacing:.04em;color:rgba(248,246,243,.66);display:flex;align-items:center;gap:9px}
+  .hero .chips span::before{content:"";width:6px;height:6px;background:var(--gold);display:inline-block}
+  .scroll-cue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;font-family:var(--f-mono);font-size:11px;letter-spacing:.18em;color:rgba(248,246,243,.45);text-transform:uppercase;animation:bob 2.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
+
+  /* ============================================================
+     STAT BAND (count up)
+     ============================================================ */
+  .stats{background:var(--black-2);color:var(--chalk);border-top:1px solid rgba(214,207,196,.12);border-bottom:1px solid rgba(214,207,196,.12);padding:0}
+  .stats-grid{display:grid;grid-template-columns:repeat(5,1fr)}
+  .stat{padding:40px 24px;text-align:center;border-right:1px solid rgba(214,207,196,.12)}
+  .stat:last-child{border-right:none}
+  .stat .num{font-family:var(--f-disp);font-size:clamp(36px,4.2vw,54px);font-weight:600;color:var(--gold);line-height:1}
+  .stat .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(248,246,243,.62);margin-top:12px}
+
+  /* ============================================================
+     SHIFT / vision
+     ============================================================ */
+  .shift-quote{font-family:var(--f-disp);font-size:clamp(28px,4.4vw,52px);font-weight:500;line-height:1.18;max-width:20ch;margin-bottom:30px}
+  .shift-quote em{color:var(--gold);font-style:italic}
+  .shift-cols{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:start}
+  .shift-cols p{color:var(--ink-soft);font-size:17px;margin-bottom:16px}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:54px}
+  .pillar{background:var(--chalk-2);border:1px solid var(--stone);border-left:4px solid transparent;padding:28px 26px;border-radius:var(--r);transition:border-left-color .3s,transform .3s}
+  .pillar:hover{border-left-color:var(--gold);transform:translateY(-4px)}
+  .pillar .n{font-family:var(--f-mono);font-size:12px;color:var(--gold);letter-spacing:.1em}
+  .pillar h3{font-size:24px;margin:10px 0 9px}
+  .pillar p{font-size:14.5px;color:var(--ink-soft)}
+
+  /* ============================================================
+     CONVERGENCE (channels -> spine)
+     ============================================================ */
+  .converge{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}
+  .converge-copy h3{font-size:clamp(26px,3.2vw,38px);margin-bottom:16px}
+  .converge-copy p{color:rgba(248,246,243,.74);font-size:16px;margin-bottom:14px;max-width:46ch}
+  .ch-list{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+  .ch{display:flex;gap:13px;align-items:flex-start}
+  .ch .ci{flex:none;width:30px;height:30px;border-radius:6px;background:rgba(195,165,117,.14);color:var(--gold);display:flex;align-items:center;justify-content:center}
+  .ch .ci svg{width:16px;height:16px}
+  .ch b{color:var(--chalk);font-weight:600;font-size:14.5px}
+  .ch span{color:rgba(248,246,243,.6);font-size:13.5px;display:block}
+  .converge-viz{position:relative;min-height:400px}
+  .converge-viz svg{width:100%;height:auto;overflow:visible}
+  .flowline{stroke:var(--gold);stroke-width:1.4;fill:none;stroke-dasharray:6 9;opacity:.55;animation:dash 1.6s linear infinite}
+  @keyframes dash{to{stroke-dashoffset:-30}}
+  .hub-ring{transform-origin:center;animation:pulse 3s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4;r:54}50%{opacity:.9;r:60}}
+
+  /* ============================================================
+     DEVICE MOCKUPS (reused, polished)
+     ============================================================ */
+  .showcase{background:linear-gradient(180deg,var(--chalk) 0%,#efe9e1 100%)}
+  .device-block{display:grid;grid-template-columns:1.15fr .85fr;gap:54px;align-items:center;margin-bottom:108px}
+  .device-block:last-child{margin-bottom:0}
+  .device-block.flip{grid-template-columns:.85fr 1.15fr}
+  .device-block.flip .device-copy{order:2}
+  .device-copy .eyebrow{display:block;margin-bottom:14px}
+  .device-copy h3{font-size:clamp(28px,3.4vw,40px);margin-bottom:15px}
+  .device-copy p{color:var(--ink-soft);font-size:16px;margin-bottom:18px;max-width:46ch}
+  .device-copy ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+  .device-copy li{display:flex;gap:12px;font-size:14.5px;color:var(--ink-soft);align-items:flex-start}
+  .device-copy li::before{content:"";flex:none;width:7px;height:7px;background:var(--gold);margin-top:8px}
+  .device-copy li b{color:var(--ink);font-weight:600}
+
+  .laptop{width:100%}
+  .laptop .screen{background:#1f1d1b;border-radius:12px 12px 0 0;padding:10px 10px 0;border:1px solid #100f0e}
+  .browserbar{display:flex;align-items:center;gap:7px;padding:8px 10px}
+  .browserbar .dot{width:10px;height:10px;border-radius:50%}
+  .browserbar .dot:nth-child(1){background:#C0392B88}.browserbar .dot:nth-child(2){background:#B8893D88}.browserbar .dot:nth-child(3){background:#6F8F6B88}
+  .browserbar .url{margin-left:12px;flex:1;background:#2b2825;border-radius:20px;padding:5px 14px;font-family:var(--f-mono);font-size:11px;color:#9a948a}
+  .laptop .viewport{background:var(--chalk);border-radius:3px;overflow:hidden}
+  .laptop .base{height:14px;background:linear-gradient(180deg,#d8d3cb,#bcb6ac);border-radius:0 0 14px 14px;position:relative}
+  .laptop .base::after{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:90px;height:5px;background:#a39d92;border-radius:0 0 6px 6px}
+
+  .tb-app{display:grid;grid-template-columns:168px 1fr;min-height:444px;font-size:12px}
+  .tb-side{background:var(--black);color:var(--chalk);padding:16px 12px}
+  .tb-side .sb-brand{display:flex;align-items:center;gap:8px;padding-bottom:16px;margin-bottom:12px;border-bottom:1px solid rgba(214,207,196,.14)}
+  .tb-side .sb-brand .mark{width:18px;height:18px;color:var(--gold)}
+  .tb-side .sb-brand span{font-family:var(--f-disp);font-size:15px}
+  .tb-side .sb-grp{font-family:var(--f-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(248,246,243,.4);margin:14px 6px 8px}
+  .tb-nav{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:4px;color:rgba(248,246,243,.78);margin-bottom:2px}
+  .tb-nav.active{background:rgba(195,165,117,.16);color:var(--chalk);position:relative}
+  .tb-nav.active::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--gold);border-radius:2px}
+  .tb-nav .nic{width:13px;height:13px;opacity:.85}
+  .tb-nav .badge{margin-left:auto;background:var(--gold);color:#2b2825;font-family:var(--f-mono);font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px}
+  .tb-main{background:var(--chalk);padding:22px;overflow:hidden}
+  .tb-main .greet{font-family:var(--f-disp);font-size:21px;color:var(--ink)}
+  .tb-main .greet + .meta{margin-bottom:18px}
+  .tb-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .kpi{border:1px solid var(--stone);border-radius:4px;padding:11px 12px;background:var(--chalk-2)}
+  .kpi .v{font-family:var(--f-disp);font-size:23px;color:var(--ink);line-height:1}
+  .kpi .k{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--taupe);margin-top:5px}
+  .tb-focus-h{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin-bottom:10px}
+  .focus-card{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--stone);border-left:3px solid var(--gold);background:var(--chalk-2);border-radius:4px;padding:11px 13px;margin-bottom:9px}
+  .focus-card .pin{flex:none;width:8px;height:8px;border-radius:50%;margin-top:5px}
+  .pin.red{background:var(--danger)}.pin.gold{background:var(--gold)}.pin.amber{background:var(--warn)}
+  .focus-card .fc-body{flex:1;min-width:0}
+  .focus-card .fc-title{font-weight:600;color:var(--ink);font-size:12px}
+  .focus-card .fc-sub{color:var(--ink-soft);font-size:11px}
+  .focus-card .code{font-family:var(--f-mono);font-size:9.5px;color:var(--bronze);background:rgba(195,165,117,.14);padding:1px 5px;border-radius:3px}
+
+  .phone{width:290px;max-width:100%;background:#1c1a18;border-radius:38px;padding:11px;border:1px solid #0e0d0c;box-shadow:0 30px 60px -28px rgba(46,44,41,.5);margin:0 auto}
+  .phone .notch{width:120px;height:22px;background:#1c1a18;border-radius:0 0 14px 14px;margin:-1px auto 0;position:relative;z-index:3}
+  .phone .pscreen{background:var(--chalk);border-radius:28px;overflow:hidden;margin-top:-22px;padding-top:22px;min-height:540px;display:flex;flex-direction:column}
+
+  .cp-top{background:var(--black);color:var(--chalk);padding:16px 18px 14px}
+  .cp-top .ct-brand{display:flex;align-items:center;gap:8px}
+  .cp-top .ct-brand .mark{width:16px;height:16px;color:var(--gold)}
+  .cp-top .ct-brand .t{font-family:var(--f-disp);font-size:15px}
+  .cp-top .ct-sub{font-family:var(--f-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(248,246,243,.5);margin-top:2px}
+  .cp-body{padding:16px;flex:1}
+  .cp-proj{font-family:var(--f-disp);font-size:19px;color:var(--ink)}
+  .cp-proj .code{font-family:var(--f-mono);font-size:10px;color:var(--bronze)}
+  .cp-bar{height:7px;background:var(--stone);border-radius:6px;margin:12px 0 6px;overflow:hidden}
+  .cp-bar>i{display:block;height:100%;width:0;background:var(--gold);border-radius:6px;transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
+  .cp-bar.go>i{width:65%}
+  .cp-prog-meta{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:9px;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em}
+  .cp-callout{font-family:var(--f-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin:22px 0 10px}
+  .cp-appr{border:1px solid var(--stone);border-radius:6px;padding:15px;background:var(--chalk-2)}
+  .cp-appr .badge{display:inline-block;font-family:var(--f-mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#8a6d2f;background:rgba(195,165,117,.2);padding:2px 8px;border-radius:10px}
+  .cp-appr h4{font-family:var(--f-disp);font-size:17px;color:var(--ink);margin:9px 0 4px}
+  .cp-appr p{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
+  .btn-row{display:flex;gap:8px}
+  .btn{flex:1;text-align:center;font-family:var(--f-ui);font-weight:600;font-size:12px;padding:9px 0;border-radius:4px;border:1px solid transparent}
+  .btn-gold{background:var(--gold);color:#2b2520;animation:glow 2.6s ease-in-out infinite}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(195,165,117,0)}50%{box-shadow:0 0 0 4px rgba(195,165,117,.22)}}
+  .btn-ghost{background:transparent;border-color:var(--stone);color:var(--ink-soft)}
+  .cp-update{margin-top:16px;display:flex;gap:10px;align-items:flex-start;padding-top:14px;border-top:1px solid var(--stone)}
+  .cp-update .ud{width:7px;height:7px;background:var(--ok);border-radius:50%;margin-top:5px;flex:none}
+  .cp-update .u-t{font-size:12px;color:var(--ink);font-weight:500}
+  .cp-update .u-d{font-family:var(--f-mono);font-size:9px;color:var(--taupe)}
+
+  /* Telegram */
+  .tg-top{background:var(--black);color:var(--chalk);padding:14px 16px;display:flex;align-items:center;gap:10px}
+  .tg-top .tg-av{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;color:#2b2520;flex:none}
+  .tg-top .tg-av svg{width:16px;height:16px}
+  .tg-top .tg-name{font-size:13px;font-weight:600}
+  .tg-top .tg-stat{font-family:var(--f-mono);font-size:8.5px;color:rgba(248,246,243,.5);text-transform:uppercase;letter-spacing:.1em}
+  .tg-chat{flex:1;padding:16px 13px;display:flex;flex-direction:column;gap:9px;background:#ECE6DE}
+  .bubble{max-width:84%;padding:9px 12px;border-radius:14px;font-size:12px;line-height:1.45;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s}
+  .bubble.show{opacity:1;transform:none}
+  .b-out{align-self:flex-end;background:var(--black);color:var(--chalk);border-bottom-right-radius:4px}
+  .b-in{align-self:flex-start;background:#fff;color:var(--ink);border:1px solid var(--stone);border-bottom-left-radius:4px}
+  .b-time{font-family:var(--f-mono);font-size:8px;opacity:.55;margin-top:3px;display:block;text-align:right}
+  .b-voice{display:flex;align-items:center;gap:9px}
+  .b-voice .play{width:22px;height:22px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex:none;color:#2b2520;font-size:10px}
+  .b-voice .wave{display:flex;align-items:center;gap:2px;height:16px}
+  .b-voice .wave i{width:2px;background:var(--gold-soft);border-radius:2px}
+  .b-photo{width:130px;height:86px;border-radius:8px;background:linear-gradient(135deg,#cfc7ba,#a89f90);display:flex;align-items:flex-end}
+  .b-photo span{font-family:var(--f-mono);font-size:8px;color:rgba(255,255,255,.85);padding:5px 7px}
+  .b-card{background:#fff;border:1px solid var(--stone);border-left:3px solid var(--gold);border-radius:8px;padding:11px 12px;max-width:90%}
+  .b-card .bc-h{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8a6d2f}
+  .b-card .bc-t{font-size:12px;color:var(--ink);margin:5px 0 2px;font-weight:500}
+  .b-card .bc-sev{font-family:var(--f-mono);font-size:9px;color:var(--danger)}
+  .b-card .bc-btns{display:flex;gap:6px;margin-top:9px}
+  .b-card .bc-btn{font-size:10px;font-weight:600;padding:6px 0;border-radius:4px;flex:1;text-align:center}
+  .bc-btn.conf{background:var(--gold);color:#2b2520}
+  .bc-btn.edit{background:var(--chalk);border:1px solid var(--stone);color:var(--ink-soft)}
+
+  /* ============================================================
+     AI PIPELINE (animated)
+     ============================================================ */
+  .pipe{position:relative;margin:8px 0 30px}
+  .pipe-track{position:relative;display:flex;align-items:stretch;border:1px solid rgba(214,207,196,.2);border-radius:6px;overflow:hidden}
+  .pstep{flex:1;min-width:148px;padding:24px 18px;position:relative;border-right:1px solid rgba(214,207,196,.16)}
+  .pstep:last-child{border-right:none}
+  .pstep .pnum{font-family:var(--f-mono);font-size:11px;color:var(--gold)}
+  .pstep h4{font-family:var(--f-disp);font-size:21px;color:var(--chalk);margin:6px 0 7px}
+  .pstep p{font-size:12.5px;color:rgba(248,246,243,.66);line-height:1.5}
+  .pstep .pdot{position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:rgba(195,165,117,.3);transition:background .3s,box-shadow .3s}
+  .pstep.lit .pdot{background:var(--gold);box-shadow:0 0 0 5px rgba(195,165,117,.18)}
+  .pipe-rail{position:relative;height:2px;margin-top:14px;background:rgba(214,207,196,.18);border-radius:2px;overflow:hidden}
+  .pipe-rail .runner{position:absolute;top:-3px;left:0;width:64px;height:8px;border-radius:8px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:runner 4s linear infinite}
+  @keyframes runner{0%{left:-64px}100%{left:100%}}
+
+  .ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .ai-card{background:rgba(248,246,243,.035);border:1px solid rgba(214,207,196,.16);border-left:4px solid transparent;border-radius:var(--r);padding:24px 22px;transition:border-left-color .3s,background .3s,transform .3s}
+  .ai-card:hover{border-left-color:var(--gold);background:rgba(248,246,243,.06);transform:translateY(-4px)}
+  .ai-card .ac-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:9px}
+  .ai-card h3{font-size:20px;color:var(--chalk)}
+  .ai-card p{font-size:13.5px;color:rgba(248,246,243,.7)}
+  .ai-card .stack{font-family:var(--f-mono);font-size:10px;letter-spacing:.03em;color:var(--gold);margin-top:12px;display:inline-block;border:1px solid rgba(195,165,117,.32);padding:3px 9px;border-radius:20px}
+  .tag-live{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:10px;flex:none;white-space:nowrap}
+  .tag-live.live{background:rgba(111,143,107,.18);color:#9bc096;border:1px solid rgba(111,143,107,.4)}
+  .tag-live.soon{background:rgba(195,165,117,.14);color:var(--gold-soft);border:1px solid rgba(195,165,117,.34)}
+
+  /* ============================================================
+     COMMAND CENTER (marquee)
+     ============================================================ */
+  .cc{background:radial-gradient(ellipse 90% 60% at 50% 0%,#322f2a,var(--black) 60%);color:var(--chalk)}
+  .cc-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:8px}
+  .cc-card{background:rgba(248,246,243,.04);border:1px solid rgba(214,207,196,.16);border-radius:var(--r);padding:26px 24px;position:relative;overflow:hidden;transition:transform .3s,border-color .3s}
+  .cc-card:hover{transform:translateY(-4px);border-color:rgba(195,165,117,.45)}
+  .cc-card.lg{grid-column:span 4}.cc-card.sm{grid-column:span 2}.cc-card.md{grid-column:span 3}
+  .cc-card .cc-k{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+  .cc-card h3{font-size:24px;color:var(--chalk);margin:8px 0 9px}
+  .cc-card p{font-size:14px;color:rgba(248,246,243,.72);max-width:52ch}
+  @media(max-width:860px){.cc-grid{grid-template-columns:1fr}.cc-card.lg,.cc-card.sm,.cc-card.md{grid-column:span 1}}
+
+  /* ball-in-court mini queue */
+  .biq{margin-top:18px;display:flex;flex-direction:column;gap:7px}
+  .biq-row{display:flex;align-items:center;gap:10px;background:rgba(248,246,243,.05);border:1px solid rgba(214,207,196,.14);border-left:3px solid var(--gold);border-radius:4px;padding:8px 11px}
+  .biq-row .ch-ic{flex:none;width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--f-mono);color:#2b2520}
+  .biq-row .ct{flex:1;min-width:0;font-size:12.5px;color:var(--chalk)}
+  .biq-row .ct small{display:block;color:rgba(248,246,243,.5);font-size:10.5px;font-family:var(--f-mono)}
+  .biq-row .score{font-family:var(--f-mono);font-size:10px;color:#2b2520;background:var(--gold);padding:2px 7px;border-radius:10px;font-weight:600}
+  .biq-row .score.hot{background:var(--danger);color:#fff}
+
+  /* knowledge graph */
+  .kg{width:100%;height:auto;overflow:visible;margin-top:8px}
+  .kg-edge{stroke:rgba(195,165,117,.5);stroke-width:1.3;fill:none;stroke-dasharray:200;stroke-dashoffset:200}
+  .kg-edge.draw{animation:draw 1.1s ease forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .kg-node circle{transition:r .3s}
+  .kg-node.spine circle{animation:nodepulse 2.6s ease-in-out infinite}
+  @keyframes nodepulse{0%,100%{opacity:.85}50%{opacity:1}}
+  .kg-node text{font-family:var(--f-mono);font-size:8.5px;fill:rgba(248,246,243,.82);letter-spacing:.02em}
+
+  /* swipe triage */
+  .swipe-wrap{position:relative;height:300px;display:flex;align-items:center;justify-content:center;margin-top:14px}
+  .swipe-card{position:absolute;width:210px;border-radius:12px;background:#fff;border:1px solid var(--stone);padding:16px;color:var(--ink)}
+  .swipe-card .sc-k{font-family:var(--f-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8a6d2f}
+  .swipe-card .sc-t{font-family:var(--f-disp);font-size:18px;margin:6px 0 4px;color:var(--ink)}
+  .swipe-card .sc-m{font-family:var(--f-mono);font-size:10px;color:var(--taupe)}
+  .swipe-card .sc-tag{position:absolute;top:14px;right:14px;font-family:var(--f-mono);font-size:9px;font-weight:600;padding:3px 8px;border-radius:6px;opacity:0}
+  .sc-tag.done{background:rgba(111,143,107,.18);color:var(--ok);border:1px solid var(--ok)}
+  .sc1{z-index:3;animation:swipe1 6s ease-in-out infinite}
+  .sc2{z-index:2;transform:scale(.94) translateY(14px);opacity:.92;animation:rise2 6s ease-in-out infinite}
+  .sc3{z-index:1;transform:scale(.88) translateY(28px);opacity:.8}
+  @keyframes swipe1{0%,55%{transform:translateX(0) rotate(0);opacity:1}70%{transform:translateX(150px) rotate(11deg);opacity:0}71%{transform:translateX(-30px) scale(.88) translateY(28px);opacity:0}100%{transform:translateX(0) scale(1) translateY(0);opacity:1;z-index:1}}
+  @keyframes rise2{0%,55%{transform:scale(.94) translateY(14px);opacity:.92}70%,100%{transform:scale(1) translateY(0);opacity:1}}
+  .swipe-hint{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);font-family:var(--f-mono);font-size:10px;color:rgba(248,246,243,.5);display:flex;gap:16px}
+  .swipe-hint span b{color:var(--gold)}
+
+  /* nba demo */
+  .nba{margin-top:16px;display:flex;flex-direction:column;gap:9px}
+  .nba-event{font-family:var(--f-mono);font-size:11px;color:rgba(248,246,243,.6);display:flex;align-items:center;gap:8px}
+  .nba-event .dotp{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .nba-rec{background:rgba(195,165,117,.1);border:1px solid rgba(195,165,117,.34);border-radius:6px;padding:11px 13px;display:flex;align-items:center;gap:11px}
+  .nba-rec .ico{flex:none;width:26px;height:26px;border-radius:6px;background:var(--gold);color:#2b2520;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .nba-rec .nt{flex:1;font-size:12.5px;color:var(--chalk)}
+  .nba-rec .nt small{display:block;color:rgba(248,246,243,.55);font-size:10.5px}
+  .nba-rec .go{font-family:var(--f-mono);font-size:10px;font-weight:600;color:#2b2520;background:var(--gold);padding:5px 10px;border-radius:5px}
+
+  /* ============================================================
+     ROADMAP phases A-E (animated)
+     ============================================================ */
+  .phases{position:relative;margin-top:30px}
+  .phase-track{position:absolute;top:22px;left:0;right:0;height:2px;background:var(--stone)}
+  .phase-track .fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold-deep),var(--gold));transition:width 1.8s ease}
+  .phase-track.go .fill{width:24%}
+  .phase-row{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;position:relative}
+  .phase{position:relative;padding-top:52px}
+  .phase .node{position:absolute;top:15px;left:0;width:16px;height:16px;border-radius:50%;background:var(--chalk);border:2px solid var(--gold)}
+  .phase.now .node{background:var(--gold);box-shadow:0 0 0 6px rgba(195,165,117,.2);animation:glow2 2.4s ease-in-out infinite}
+  @keyframes glow2{0%,100%{box-shadow:0 0 0 5px rgba(195,165,117,.16)}50%{box-shadow:0 0 0 9px rgba(195,165,117,.28)}}
+  .phase .pl{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+  .phase.now .pl::after{content:" · now";color:var(--ok)}
+  .phase h4{font-family:var(--f-disp);font-size:21px;color:var(--ink);margin:5px 0 8px}
+  .phase ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .phase li{font-size:12.5px;color:var(--ink-soft);padding-left:13px;position:relative}
+  .phase li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;background:var(--gold-soft);border-radius:1px}
+  @media(max-width:860px){.phase-row{grid-template-columns:1fr;gap:8px}.phase-track{display:none}.phase{padding-top:6px;padding-left:24px}.phase .node{top:4px}}
+
+  /* how it's built */
+  .builtby{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+  .squad-viz{display:flex;flex-direction:column;gap:10px}
+  .squad-row{display:flex;align-items:center;gap:12px;background:rgba(248,246,243,.04);border:1px solid rgba(214,207,196,.14);border-radius:6px;padding:11px 14px}
+  .squad-row .sq-led{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(111,143,107,.5);animation:led 2s ease-in-out infinite}
+  @keyframes led{0%,100%{box-shadow:0 0 0 0 rgba(111,143,107,.5)}50%{box-shadow:0 0 0 5px rgba(111,143,107,0)}}
+  .squad-row .sq-n{flex:1;font-size:13.5px;color:var(--chalk);font-weight:500}
+  .squad-row .sq-t{font-family:var(--f-mono);font-size:10.5px;color:rgba(248,246,243,.55)}
+
+  /* lifecycle */
+  .life{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--stone);border-radius:8px;overflow:hidden;margin-top:10px}
+  .life-step{flex:1;min-width:160px;padding:24px 20px;border-right:1px solid var(--stone);background:var(--chalk-2);position:relative}
+  .life-step:last-child{border-right:none}
+  .life-step .ls-n{font-family:var(--f-mono);font-size:11px;color:var(--gold)}
+  .life-step h4{font-family:var(--f-disp);font-size:20px;margin:6px 0 7px;color:var(--ink)}
+  .life-step p{font-size:12.5px;color:var(--ink-soft)}
+
+  /* ============================================================
+     CLOSE
+     ============================================================ */
+  .close{text-align:center}
+  .close .mark-big{width:58px;height:58px;color:var(--gold);margin:0 auto 26px}
+  .close h2{font-size:clamp(34px,5vw,62px);margin-bottom:18px}
+  .close h2 em{color:var(--gold);font-style:italic}
+  .close p{color:rgba(248,246,243,.74);font-size:18px;font-weight:300;max-width:54ch;margin:0 auto 36px}
+  .close .sig{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;padding-top:30px;border-top:1px solid rgba(214,207,196,.16);max-width:560px;margin:0 auto}
+  .close .sig div .who{font-family:var(--f-disp);font-size:21px;color:var(--chalk)}
+  .close .sig div .role{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe)}
+  footer.pg{background:#1a1917;color:rgba(248,246,243,.45);text-align:center;padding:26px;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em}
+
+  /* responsive */
+  @media(max-width:900px){
+    .stats-grid{grid-template-columns:repeat(2,1fr)}
+    .stat:nth-child(2){border-right:none}.stat{border-bottom:1px solid rgba(214,207,196,.12)}
+    .shift-cols,.converge,.builtby{grid-template-columns:1fr;gap:32px}
+    .pillars,.ai-grid{grid-template-columns:1fr}
+    .device-block,.device-block.flip{grid-template-columns:1fr;gap:34px}
+    .device-block.flip .device-copy{order:0}
+    .pstep{border-right:none;border-bottom:1px solid rgba(214,207,196,.16)}
+    .pipe-track{flex-direction:column}
+  }
+  @media(max-width:560px){
+    .wrap{padding:0 20px}.stats-grid{grid-template-columns:1fr}.stat{border-right:none}
+    .hero-nav .loc{display:none}.tb-app{grid-template-columns:1fr}.tb-side{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar" id="scrollbar"></div>
+
+<div class="topbar" id="topbar">
+  <a class="tb-brand" href="#top">
+    <svg class="mark" viewBox="0 0 170.1 170.1" fill="currentColor"><path d="M71.1,18.9c-6.5.3-13.4,0-19.9.4-3.1.2-7.5.6-9.6,3-1.4,1.7-2.2,5.2-3,6.1-.5.5-.9.5-1.5.4-1-.7.3-7,.6-8.4.4-2.5,1-6.4,1.7-8.8.2-.6.4-1.4,1-1.6.3,0,4.8,1.5,6.1,1.7,1.8.2,4.6.4,6.5.5,16.8.8,39.2,1,55.9,0,3-.2,6.1-.9,9.1-1.4,1.6.3.3,8.8.3,10.3,0,2.2.4,5.4,0,7.4-.3,1.4-2.1,1.4-2.2.8.5-7.5-4.8-9.3-11.1-10.2l-19-.4v38.6c.3.4.6.6,1.1.7,3.1.6,8.3-.2,11.8,0,15.6,1,27.7,10,23,26.9-1.9,7-7.2,11.5-12.3,16.2,17.4,5.5,29.9,22.3,21.1,40.6-4.4,9.1-14.4,14.9-24.2,16l-3.1-5.5c20.6-2.9,15.3-31.6,3.3-41.5-2.5-2.1-8.1-4.8-11.3-4.8h-8.9v20.1l-14.9-22.8-.3-2.9h27.7c3.7,0,7.8-5.2,9-8.5,3.8-11.1-1.1-27.2-14.3-28.6h-33.5c-2.9-1-.8-5.3.3-5.3h10.7V18.9h-.1Z"/></svg>
+    <span class="name">TrueBuild <b>OS</b></span>
+  </a>
+  <nav class="tb-links">
+    <a href="#engine">AI Engine</a>
+    <a href="#command">Command Center</a>
+    <a href="#roadmap">Roadmap</a>
+  </nav>
+</div>
+
+<!-- ============================ HERO ============================ -->
+<header class="hero" id="top">
+  <div class="hero-glow"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-bg" aria-hidden="true">
+    <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+      <g id="heroNet" stroke="rgba(195,165,117,0.35)" stroke-width="1" fill="none"></g>
+    </svg>
+  </div>
+
+  <nav class="hero-nav">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 170.1 170.1" fill="currentColor" aria-hidden="true"><path d="M71.1,18.9c-6.5.3-13.4,0-19.9.4-3.1.2-7.5.6-9.6,3-1.4,1.7-2.2,5.2-3,6.1-.5.5-.9.5-1.5.4-1-.7.3-7,.6-8.4.4-2.5,1-6.4,1.7-8.8.2-.6.4-1.4,1-1.6.3,0,4.8,1.5,6.1,1.7,1.8.2,4.6.4,6.5.5,16.8.8,39.2,1,55.9,0,3-.2,6.1-.9,9.1-1.4,1.6.3.3,8.8.3,10.3,0,2.2.4,5.4,0,7.4-.3,1.4-2.1,1.4-2.2.8.5-7.5-4.8-9.3-11.1-10.2l-19-.4v38.6c.3.4.6.6,1.1.7,3.1.6,8.3-.2,11.8,0,15.6,1,27.7,10,23,26.9-1.9,7-7.2,11.5-12.3,16.2,17.4,5.5,29.9,22.3,21.1,40.6-4.4,9.1-14.4,14.9-24.2,16l-3.1-5.5c20.6-2.9,15.3-31.6,3.3-41.5-2.5-2.1-8.1-4.8-11.3-4.8h-8.9v20.1l-14.9-22.8-.3-2.9h27.7c3.7,0,7.8-5.2,9-8.5,3.8-11.1-1.1-27.2-14.3-28.6h-33.5c-2.9-1-.8-5.3.3-5.3h10.7V18.9h-.1Z"/></svg>
+      <span class="name">True Build <b>Design</b></span>
+    </div>
+    <span class="loc">Dubai · est. design &amp; build</span>
+  </nav>
+
+  <div class="hero-body">
+    <div class="wrap">
+      <p class="eyebrow">The AI Operations Command Center</p>
+      <h1>TrueBuild&nbsp;<span class="os">OS</span></h1>
+      <p class="sub-h">where a job site becomes an operating system</p>
+      <p class="lead">Capture work from any channel. Let AI triage it, surface exactly what needs you, recommend the next move, and remember every decision you've ever made.</p>
+      <div class="chips">
+        <span>Capture anywhere</span>
+        <span>Triage automatically</span>
+        <span>Decide with full context</span>
+        <span>Nothing falls through</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">Scroll ↓</div>
+</header>
+
+<!-- ============================ STATS ============================ -->
+<section class="stats" style="padding:0">
+  <div class="stats-grid">
+    <div class="stat reveal"><div class="num" data-count="28">0</div><div class="lbl">Sprints shipped</div></div>
+    <div class="stat reveal" data-d="1"><div class="num" data-count="6">0</div><div class="lbl">Live interfaces</div></div>
+    <div class="stat reveal" data-d="2"><div class="num" data-count="5">0</div><div class="lbl">Capture channels</div></div>
+    <div class="stat reveal" data-d="3"><div class="num" data-count="19">0</div><div class="lbl">Agent (MCP) tools</div></div>
+    <div class="stat reveal" data-d="4"><div class="num" data-count="5">0</div><div class="lbl">AI build squads</div></div>
+  </div>
+</section>
+
+<!-- ============================ THE SHIFT ============================ -->
+<section class="shift">
+  <div class="wrap">
+    <div class="shift-cols">
+      <div class="reveal">
+        <p class="eyebrow">The shift</p>
+        <p class="shift-quote">From an operations platform to an <em>operations command center.</em></p>
+      </div>
+      <div class="reveal" data-d="1">
+        <p>Construction doesn't fail on the build. It fails in the gaps — the decision made in a site meeting that never got written down, the defect photographed and forgotten, the approval buried in an email thread.</p>
+        <p>The hard parts are already built: voice and email become AI-generated records; issues, RFIs, approvals and contracts-with-embeddings all live in one system. What comes next isn't more features bolted on — it's the <b style="color:var(--ink)">structural spine</b> that turns a platform into a command center: one place where AI understands everything on the way in, shows you only what needs a human, proposes the next move, and can reconstruct any decision exactly as it stood the day it was made.</p>
+      </div>
+    </div>
+    <div class="pillars">
+      <div class="pillar reveal">
+        <div class="n">01</div><h3>Capture anywhere</h3>
+        <p>A voice note from site, a photo over Telegram, a recorded client meeting, an email, a QR scan — every channel lands in one pipeline, already understood.</p>
+      </div>
+      <div class="pillar reveal" data-d="1">
+        <div class="n">02</div><h3>One AI brain</h3>
+        <p>Transcribe, classify, extract, cross-check against the contract, rank by urgency, and recommend the next action — automatically, the moment work arrives.</p>
+      </div>
+      <div class="pillar reveal" data-d="2">
+        <div class="n">03</div><h3>Total recall</h3>
+        <p>An append-only event spine and knowledge graph mean every decision, change and approval is queryable forever — and the system gets sharper each time you correct it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CONVERGENCE / CHANNELS ============================ -->
+<section class="dark">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">One system, every channel</p>
+      <h2>Five doors in. One pipeline. Zero silos.</h2>
+      <p>Field teams, clients and contractors already live in the channels they use. TrueBuild OS meets them there — and routes everything into a single intelligent intake.</p>
+    </div>
+    <div class="converge">
+      <div class="converge-copy reveal">
+        <div class="ch-list">
+          <div class="ch"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 4 3 11l6 2 2 6 3-4 4 3 3-14z"/></svg></span><div><b>Telegram group "Scribe"</b><span>Add the bot to a project group, type <span class="mono">/init MZK001</span> — it reads voice notes, photos and messages, legally.</span></div></div>
+          <div class="ch"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21l1.6-4A8.5 8.5 0 1 1 12 20a8.6 8.6 0 0 1-4.3-1.1L3 21z"/></svg></span><div><b>WhatsApp forward-in</b><span>A business number staff and clients forward voice notes, photos and messages to.</span></div></div>
+          <div class="ch"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="3" width="8" height="13" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><div><b>Plaud AI recorder</b><span>Record a client meeting; pull it back with speaker labels and timestamps via MCP.</span></div></div>
+          <div class="ch"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><b>Email plus-addressing</b><span><span class="mono">inbox+MZK001@…</span> binds an email straight to its project — no lookup.</span></div></div>
+          <div class="ch"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7h-7z"/></svg></span><div><b>QR intake sheets</b><span>Scan-and-submit from the field for contractor drawings and samples.</span></div></div>
+        </div>
+      </div>
+      <div class="converge-viz reveal" data-d="1">
+        <svg viewBox="0 0 460 380" id="convergeSvg">
+          <!-- channel nodes left, hub right -->
+          <g font-family="IBM Plex Mono" font-size="11" fill="rgba(248,246,243,0.78)">
+            <g transform="translate(20,40)"><circle r="5" fill="#C3A575"/><text x="14" y="4">Telegram</text></g>
+            <g transform="translate(20,115)"><circle r="5" fill="#C3A575"/><text x="14" y="4">WhatsApp</text></g>
+            <g transform="translate(20,190)"><circle r="5" fill="#C3A575"/><text x="14" y="4">Plaud</text></g>
+            <g transform="translate(20,265)"><circle r="5" fill="#C3A575"/><text x="14" y="4">Email</text></g>
+            <g transform="translate(20,340)"><circle r="5" fill="#C3A575"/><text x="14" y="4">QR intake</text></g>
+          </g>
+          <path class="flowline" d="M25,40 C180,40 200,190 360,190"/>
+          <path class="flowline" d="M25,115 C190,115 210,190 360,190" style="animation-delay:.3s"/>
+          <path class="flowline" d="M25,190 L360,190" style="animation-delay:.6s"/>
+          <path class="flowline" d="M25,265 C190,265 210,190 360,190" style="animation-delay:.45s"/>
+          <path class="flowline" d="M25,340 C180,340 200,190 360,190" style="animation-delay:.15s"/>
+          <circle class="hub-ring" cx="385" cy="190" r="54" fill="none" stroke="#C3A575" stroke-width="1.4"/>
+          <circle cx="385" cy="190" r="40" fill="#35322E" stroke="#C3A575" stroke-width="1.5"/>
+          <text x="385" y="184" text-anchor="middle" font-family="Cormorant Garamond" font-size="17" fill="#F8F6F3" font-style="italic">TrueBuild</text>
+          <text x="385" y="202" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#C3A575" letter-spacing="2">AI INTAKE</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ DEVICE SHOWCASE ============================ -->
+<section class="showcase">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">See it run</p>
+      <h2>The same data, dressed for whoever's looking.</h2>
+      <p>Recreated faithfully in the True Build Design system — Architect Black, Chalk White and Brushed Gold; Cormorant Garamond, Inter and IBM Plex Mono.</p>
+    </div>
+
+    <!-- Studio Workspace -->
+    <div class="device-block">
+      <div class="device-stage reveal">
+        <div class="laptop">
+          <div class="screen">
+            <div class="browserbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">app.truebuild.design / dashboard</span></div>
+            <div class="viewport">
+              <div class="tb-app">
+                <aside class="tb-side">
+                  <div class="sb-brand"><svg class="mark" viewBox="0 0 170.1 170.1" fill="currentColor"><path d="M71.1,18.9c-6.5.3-13.4,0-19.9.4-3.1.2-7.5.6-9.6,3-1.4,1.7-2.2,5.2-3,6.1-.5.5-.9.5-1.5.4-1-.7.3-7,.6-8.4.4-2.5,1-6.4,1.7-8.8.2-.6.4-1.4,1-1.6.3,0,4.8,1.5,6.1,1.7,1.8.2,4.6.4,6.5.5,16.8.8,39.2,1,55.9,0,3-.2,6.1-.9,9.1-1.4,1.6.3.3,8.8.3,10.3,0,2.2.4,5.4,0,7.4-.3,1.4-2.1,1.4-2.2.8.5-7.5-4.8-9.3-11.1-10.2l-19-.4v38.6c.3.4.6.6,1.1.7,3.1.6,8.3-.2,11.8,0,15.6,1,27.7,10,23,26.9-1.9,7-7.2,11.5-12.3,16.2,17.4,5.5,29.9,22.3,21.1,40.6-4.4,9.1-14.4,14.9-24.2,16l-3.1-5.5c20.6-2.9,15.3-31.6,3.3-41.5-2.5-2.1-8.1-4.8-11.3-4.8h-8.9v20.1l-14.9-22.8-.3-2.9h27.7c3.7,0,7.8-5.2,9-8.5,3.8-11.1-1.1-27.2-14.3-28.6h-33.5c-2.9-1-.8-5.3.3-5.3h10.7V18.9h-.1Z"/></svg><span>TrueBuild OS</span></div>
+                  <div class="sb-grp">Workspace</div>
+                  <div class="tb-nav active"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>My Queue <span class="badge">7</span></div>
+                  <div class="sb-grp">Projects</div>
+                  <div class="tb-nav"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</div>
+                  <div class="tb-nav"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4zM3 12l9 4 9-4M3 17l9 4 9-4"/></svg>Projects</div>
+                  <div class="tb-nav"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Clients</div>
+                  <div class="tb-nav"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="1.5"/><path d="m3 14 5-4 4 3 4-4 5 4"/></svg>Portfolio</div>
+                </aside>
+                <main class="tb-main">
+                  <div class="greet">Good morning, Tariq</div>
+                  <div class="meta">Friday, 22 May · 3 items need you today</div>
+                  <div class="tb-kpis">
+                    <div class="kpi"><div class="v">12</div><div class="k">Active projects</div></div>
+                    <div class="kpi"><div class="v">23</div><div class="k">Open issues</div></div>
+                    <div class="kpi"><div class="v">5</div><div class="k">Pending approvals</div></div>
+                    <div class="kpi"><div class="v">3</div><div class="k">Overdue</div></div>
+                  </div>
+                  <div class="tb-focus-h">Today's Focus</div>
+                  <div class="focus-card"><span class="pin red"></span><div class="fc-body"><div class="fc-title">Waterproofing non-conformance <span class="code">NCR-014</span></div><div class="fc-sub">MDW-009 · ball-in-court: contractor · 2 days</div></div></div>
+                  <div class="focus-card"><span class="pin gold"></span><div class="fc-body"><div class="fc-title">Kitchen joinery — detailed design <span class="code">SIN-003</span></div><div class="fc-sub">Approval sent to client · awaiting sign-off</div></div></div>
+                  <div class="focus-card"><span class="pin amber"></span><div class="fc-body"><div class="fc-title">Confirm stone supplier <span class="code">BRJ-001</span></div><div class="fc-sub">Action item · due today · assigned to you</div></div></div>
+                </main>
+              </div>
+            </div>
+          </div>
+          <div class="base"></div>
+        </div>
+      </div>
+      <div class="device-copy reveal" data-d="1">
+        <span class="eyebrow">Desktop · Studio Workspace</span>
+        <h3>The command centre</h3>
+        <p>Everything the studio runs on, in one Architect-Black surface. The day opens on "My Queue" — what actually needs a human, ranked by urgency.</p>
+        <ul>
+          <li><b>Today's Focus</b> surfaces overdue NCRs, pending approvals and due action items the moment you sign in.</li>
+          <li><b>Ball-in-court</b> shows whose move it is on every item, so nothing stalls in the gap between people.</li>
+          <li><b>Reference codes</b> like <span class="mono">MDW-009</span> in monospace tie every record to its project at a glance.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Client Portal -->
+    <div class="device-block flip">
+      <div class="device-copy reveal">
+        <span class="eyebrow">Mobile · Client Portal</span>
+        <h3>Approvals in one tap</h3>
+        <p>Clients don't see RFIs and NCRs — they see their home taking shape. A warm, calm portal where signing off on a decision takes a single tap.</p>
+        <ul>
+          <li><b>Secure magic-link approvals</b> — sign off on joinery, finishes and variations without an account or password.</li>
+          <li><b>An AI project assistant</b> grounded only in their real data, translating jargon into plain English.</li>
+          <li><b>Live progress</b>, material samples and a clean notification feed — full transparency, zero noise.</li>
+        </ul>
+      </div>
+      <div class="device-stage reveal" data-d="1">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="cp-top"><div class="ct-brand"><svg class="mark" viewBox="0 0 170.1 170.1" fill="currentColor"><path d="M71.1,18.9c-6.5.3-13.4,0-19.9.4-3.1.2-7.5.6-9.6,3-1.4,1.7-2.2,5.2-3,6.1-.5.5-.9.5-1.5.4-1-.7.3-7,.6-8.4.4-2.5,1-6.4,1.7-8.8.2-.6.4-1.4,1-1.6.3,0,4.8,1.5,6.1,1.7,1.8.2,4.6.4,6.5.5,16.8.8,39.2,1,55.9,0,3-.2,6.1-.9,9.1-1.4,1.6.3.3,8.8.3,10.3,0,2.2.4,5.4,0,7.4-.3,1.4-2.1,1.4-2.2.8.5-7.5-4.8-9.3-11.1-10.2l-19-.4v38.6c.3.4.6.6,1.1.7,3.1.6,8.3-.2,11.8,0,15.6,1,27.7,10,23,26.9-1.9,7-7.2,11.5-12.3,16.2,17.4,5.5,29.9,22.3,21.1,40.6-4.4,9.1-14.4,14.9-24.2,16l-3.1-5.5c20.6-2.9,15.3-31.6,3.3-41.5-2.5-2.1-8.1-4.8-11.3-4.8h-8.9v20.1l-14.9-22.8-.3-2.9h27.7c3.7,0,7.8-5.2,9-8.5,3.8-11.1-1.1-27.2-14.3-28.6h-33.5c-2.9-1-.8-5.3.3-5.3h10.7V18.9h-.1Z"/></svg><span class="t">True Build Design</span></div><div class="ct-sub">Client Portal</div></div>
+            <div class="cp-body">
+              <div class="cp-proj">Marina Penthouse <span class="code">· SIN-003</span></div>
+              <div class="cp-bar"><i></i></div>
+              <div class="cp-prog-meta"><span>Detailed design</span><span>65%</span></div>
+              <div class="cp-callout">Needs your sign-off</div>
+              <div class="cp-appr">
+                <span class="badge">Awaiting approval</span>
+                <h4>Kitchen joinery — detailed design</h4>
+                <p>Your designer has finalised the joinery layout and finishes. Tap approve to keep things moving.</p>
+                <div class="btn-row"><span class="btn btn-gold">Approve</span><span class="btn btn-ghost">Request changes</span></div>
+              </div>
+              <div class="cp-update"><span class="ud"></span><div><div class="u-t">Site visit report added</div><div class="u-d">18 May · tap to view</div></div></div>
+              <div class="cp-update"><span class="ud"></span><div><div class="u-t">2 new material samples to review</div><div class="u-d">15 May · Calacatta marble, brushed brass</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="device-block">
+      <div class="device-stage reveal">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="tg-top"><div class="tg-av"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 4 3 11l6 2 2 6 3-4 4 3 3-14z"/></svg></div><div><div class="tg-name">TrueBuild Field Bot</div><div class="tg-stat">online</div></div></div>
+            <div class="tg-chat" id="tgChat">
+              <div class="bubble b-out" data-step="1"><div class="b-voice"><span class="play">▶</span><span class="wave"><i style="height:5px"></i><i style="height:11px"></i><i style="height:16px"></i><i style="height:9px"></i><i style="height:13px"></i><i style="height:6px"></i><i style="height:12px"></i><i style="height:8px"></i></span><span class="mono" style="font-size:10px">0:14</span></div><span class="b-time">09:42</span></div>
+              <div class="bubble b-out" data-step="2"><div class="b-photo"><span>master_bath.jpg</span></div><span class="b-time">09:42</span></div>
+              <div class="bubble b-in" data-step="3">Transcribing your note…</div>
+              <div class="bubble b-in" data-step="4">"Cracked tile in the master bathroom, needs replacing before handover — Meadows 9."<span class="b-time">09:42</span></div>
+              <div class="bubble b-card" data-step="5"><div class="bc-h">📋 Site Defect · MDW-009</div><div class="bc-t">Cracked tile in master bathroom — replace before handover.</div><div class="bc-sev">Severity: High</div><div class="bc-btns"><span class="bc-btn conf">✓ Confirm</span><span class="bc-btn edit">✎ Edit</span></div></div>
+              <div class="bubble b-out" data-step="6">✓ Confirm <span class="b-time">09:43</span></div>
+              <div class="bubble b-in" data-step="7">Logged as <b>Issue #214</b>, assigned to the site team, ball now in their court. ✅<span class="b-time">09:43</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="device-copy reveal" data-d="1">
+        <span class="eyebrow">Telegram · Field Bot</span>
+        <h3>From a voice note to a tracked issue — in 30 seconds</h3>
+        <p>The project manager is standing in the bathroom. They don't open an app or fill a form. They talk, snap a photo, and the AI does the rest.</p>
+        <ul>
+          <li><b>Claude transcribes</b> the voice note straight from audio — no separate speech engine.</li>
+          <li><b>It classifies and extracts</b> the project code, severity, assignee and due date as structured data.</li>
+          <li><b>One tap confirms</b> it into a real, assigned, tracked issue — live in the studio workspace instantly.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ AI ENGINE ============================ -->
+<section class="dark" id="engine">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">The engine room</p>
+      <h2>An AI layer between the job site and the record.</h2>
+      <p>Built for the messy middle of construction — voice, photos and half-sentences in; clean, structured, routed, cross-checked data out. Every model call logged with its tokens and cost.</p>
+    </div>
+
+    <div class="pipe reveal" id="pipe">
+      <div class="pipe-track">
+        <div class="pstep"><div class="pnum">01</div><h4>Capture</h4><p>Voice, photo or text arrives via Telegram, WhatsApp, Plaud, email or QR.</p><span class="pdot"></span></div>
+        <div class="pstep"><div class="pnum">02</div><h4>Transcribe</h4><p>Claude Haiku transcribes audio natively — multimodal, no Whisper.</p><span class="pdot"></span></div>
+        <div class="pstep"><div class="pnum">03</div><h4>Understand</h4><p>Classify, extract project &amp; assignee, grade severity, resolve dates.</p><span class="pdot"></span></div>
+        <div class="pstep"><div class="pnum">04</div><h4>Cross-check</h4><p>Match against the contract &amp; spec; flag scope departures.</p><span class="pdot"></span></div>
+        <div class="pstep"><div class="pnum">05</div><h4>Act</h4><p>Create the issue, record or approval — and recommend the next move.</p><span class="pdot"></span></div>
+      </div>
+      <div class="pipe-rail"><span class="runner"></span></div>
+    </div>
+
+    <div class="ai-grid">
+      <div class="ai-card reveal"><div class="ac-top"><h3>Native voice transcription</h3><span class="tag-live live">Live</span></div><p>Site voice notes transcribed straight from the audio bytes — the same model that understands also listens.</p><span class="stack">claude-haiku · audio</span></div>
+      <div class="ai-card reveal" data-d="1"><div class="ac-top"><h3>Multimodal field triage</h3><span class="tag-live live">Live</span></div><p>Photos, voice and text sorted into defect, decision, action or feedback — with project, assignee, due date and severity pulled out as structured data.</p><span class="stack">claude-haiku · vision</span></div>
+      <div class="ai-card reveal" data-d="2"><div class="ac-top"><h3>Contract intelligence</h3><span class="tag-live live">Live</span></div><p>Contracts &amp; specs chunked and embedded into pgvector; RFIs and issues auto cross-referenced against the nearest clauses to flag non-compliance.</p><span class="stack">embeddings · pgvector</span></div>
+      <div class="ai-card reveal"><div class="ac-top"><h3>Client project assistant</h3><span class="tag-live live">Live</span></div><p>A warm, jargon-free assistant grounded only in that client's real project data. It never invents a date or a cost.</p><span class="stack">RAG · project-scoped</span></div>
+      <div class="ai-card reveal" data-d="1"><div class="ac-top"><h3>Agent-ready over MCP</h3><span class="tag-live live">Live</span></div><p>A 19-tool MCP server + open write API let Claude itself create issues, draft approvals and run the dashboard. Not just AI-assisted — AI-operable.</p><span class="stack">19 tools · MCP + API</span></div>
+      <div class="ai-card reveal" data-d="2"><div class="ac-top"><h3>Self-learning loop</h3><span class="tag-live soon">Deepening</span></div><p>Today it captures the diff between every AI draft and the human-approved final. Next, that diff feeds back into generation — the system literally learns your house style.</p><span class="stack">edit → learn</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ COMMAND CENTER (marquee) ============================ -->
+<section class="cc" id="command">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">What we're building · The AI Operations Command Center</p>
+      <h2>One queue for everything. One brain behind it.</h2>
+      <p>The next chapter isn't a feature list — it's a structural rethink. A unified record that flows through explicit states, carries one "whose move?" owner, links to everything related, and emits an event stream an AI can reason over.</p>
+    </div>
+    <div class="cc-grid">
+
+      <!-- Ball in court (large) -->
+      <div class="cc-card lg reveal">
+        <div class="cc-k">Ball-in-court</div>
+        <h3>"What's waiting on me" — across every entity and channel</h3>
+        <p>One ranked list of everything where the next move is yours: action items, RFIs, approvals, decisions, an email that needs a reply. Act in place. The silos finally die.</p>
+        <div class="biq">
+          <div class="biq-row"><span class="ch-ic" style="background:#C3A575">✓</span><div class="ct">Approve kitchen joinery — SIN-003<small>client approval · waiting 2 days</small></div><span class="score">92</span></div>
+          <div class="biq-row"><span class="ch-ic" style="background:#5E7A8C;color:#fff">@</span><div class="ct">Reply: contractor RFI on waterproofing<small>email · MDW-009</small></div><span class="score hot">100</span></div>
+          <div class="biq-row"><span class="ch-ic" style="background:#6F8F6B;color:#fff">▶</span><div class="ct">Decide: stone supplier — BRJ-001<small>open question · raised in site meeting</small></div><span class="score">74</span></div>
+        </div>
+      </div>
+
+      <!-- Swipe triage (small) -->
+      <div class="cc-card sm reveal" data-d="1">
+        <div class="cc-k">Mobile</div>
+        <h3>Tinder for your work</h3>
+        <p>A card stack of what's in your court. Swipe to clear it.</p>
+        <div class="swipe-wrap">
+          <div class="swipe-card sc3"><div class="sc-k">Action item</div><div class="sc-t">Order brushed brass</div><div class="sc-m">BRJ-001 · due Fri</div></div>
+          <div class="swipe-card sc2"><div class="sc-k">RFI</div><div class="sc-t">Slab penetration query</div><div class="sc-m">MDW-009 · contractor</div></div>
+          <div class="swipe-card sc1"><span class="sc-tag done">DONE →</span><div class="sc-k">Approval</div><div class="sc-t">Sign off lighting plan</div><div class="sc-m">SIN-003 · client</div></div>
+          <div class="swipe-hint"><span><b>→</b> done</span><span><b>←</b> snooze</span><span><b>↑</b> reassign</span></div>
+        </div>
+      </div>
+
+      <!-- Knowledge graph (medium) -->
+      <div class="cc-card md reveal">
+        <div class="cc-k">The spine + knowledge graph</div>
+        <h3>Total recall of every decision</h3>
+        <p>Decisions, change requests and open questions become first-class records linked to the work and money they drive — over an append-only event stream. Ask "what did we decide, and when?" and reconstruct the answer exactly as it stood.</p>
+        <svg class="kg" viewBox="0 0 420 200" id="kgSvg">
+          <g id="kgEdges"></g>
+          <g id="kgNodes">
+            <g class="kg-node spine" data-x="210" data-y="100"><circle r="22" fill="#C3A575"/><text x="210" y="103" text-anchor="middle" fill="#2b2520" font-weight="600">Event</text></g>
+            <g class="kg-node" data-x="80" data-y="45"><circle r="17" fill="#35322E" stroke="#C3A575"/><text x="80" y="48" text-anchor="middle">Record</text></g>
+            <g class="kg-node" data-x="80" data-y="155"><circle r="17" fill="#35322E" stroke="#C3A575"/><text x="80" y="158" text-anchor="middle">Decision</text></g>
+            <g class="kg-node" data-x="340" data-y="45"><circle r="17" fill="#35322E" stroke="#C3A575"/><text x="340" y="48" text-anchor="middle">Action</text></g>
+            <g class="kg-node" data-x="340" data-y="155"><circle r="17" fill="#35322E" stroke="#C3A575"/><text x="340" y="158" text-anchor="middle">Milestone</text></g>
+            <g class="kg-node" data-x="210" data-y="178"><circle r="15" fill="#35322E" stroke="#C3A575"/><text x="210" y="181" text-anchor="middle">Approval</text></g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- NBA (medium) -->
+      <div class="cc-card md reveal" data-d="1">
+        <div class="cc-k">Next-best-action engine</div>
+        <h3>It tells you what to do next</h3>
+        <p>On every event, the system retrieves context, generates candidate actions, ranks them, and presents the top one — one click to fire the workflow. It learns from what you accept and reject.</p>
+        <div class="nba">
+          <div class="nba-event"><span class="dotp"></span> Event: meeting record generated · no follow-up tasks</div>
+          <div class="nba-rec"><span class="ico">↗</span><div class="nt">Raise an RFI to the contractor<small>2 open questions have no owner</small></div><span class="go">Do it</span></div>
+        </div>
+      </div>
+
+      <!-- Multi channel inbox (large) -->
+      <div class="cc-card lg reveal">
+        <div class="cc-k">Multi-channel command inbox</div>
+        <h3>Telegram groups, WhatsApp, Plaud and email — finally in one place</h3>
+        <p>"Ask AI across everything" omnibox over the full project history. Auto-classification into buckets you describe in plain language. SLA and age tracking. Signal nudges: <span class="mono" style="color:var(--gold-soft)">approval pending &gt; 5 days · RFI overdue · meeting with no next step.</span></p>
+      </div>
+
+      <!-- Local + cloud (small) -->
+      <div class="cc-card sm reveal" data-d="1">
+        <div class="cc-k">Local + cloud</div>
+        <h3>Right model, right job</h3>
+        <p>Cheap, private local models for classification and embeddings; Claude frontier for hard generation and agentic reasoning. Routed by confidence to control spend as volume grows.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================ ROADMAP A-E ============================ -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">The sequence</p>
+      <h2>Five phases. Each ships value and de-risks the next.</h2>
+      <p>Phase A is live work right now — it removes the reason records sit unapproved. Everything after it compounds on the spine.</p>
+    </div>
+    <div class="phases reveal">
+      <div class="phase-track" id="phaseTrack"><div class="fill"></div></div>
+      <div class="phase-row">
+        <div class="phase now"><span class="node"></span><div class="pl">Phase A</div><h4>Foundations &amp; trust</h4><ul><li>Editable records before approval</li><li>RAG: give the AI real context</li><li>Per-type prompts &amp; structured output</li><li>Inline action-item triage</li></ul></div>
+        <div class="phase"><span class="node"></span><div class="pl">Phase B</div><h4>The spine</h4><ul><li>Append-only event stream</li><li>First-class decisions &amp; questions</li><li>Ball-in-court + related-to links</li><li>Unify items ↔ milestones ↔ issues</li></ul></div>
+        <div class="phase"><span class="node"></span><div class="pl">Phase C</div><h4>Command center</h4><ul><li>Telegram "Scribe" group binding</li><li>WhatsApp / Plaud / email intake</li><li>Multi-channel ball-in-court queue</li><li>Mobile swipe triage</li></ul></div>
+        <div class="phase"><span class="node"></span><div class="pl">Phase D</div><h4>Intelligence</h4><ul><li>Next-best-action engine</li><li>Edit-then-learn loop</li><li>Ask AI across everything</li><li>Bi-temporal knowledge graph</li></ul></div>
+        <div class="phase"><span class="node"></span><div class="pl">Phase E</div><h4>Lifecycle</h4><ul><li>FF&amp;E lifecycle + one-click PO</li><li>Budget roll-up &amp; forecasting</li><li>Brief questionnaire + web-clipper</li><li>Zoho Books financials</li></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ HOW IT'S BUILT ============================ -->
+<section class="dark">
+  <div class="wrap">
+    <div class="builtby">
+      <div class="reveal">
+        <p class="eyebrow">How it's built</p>
+        <h2 style="font-size:clamp(30px,4vw,46px);margin:14px 0 18px">Built the way it runs — by AI.</h2>
+        <p class="lead" style="margin-bottom:16px">TrueBuild OS is developed by a fleet of AI coding agents working in parallel. Five squads, each owning a stream, each in its own workspace, all merging into one product.</p>
+        <p class="lead">A founder directing agents instead of typing every line — which is exactly why an operation this ambitious can ship at this pace from a two-person studio.</p>
+      </div>
+      <div class="reveal" data-d="1">
+        <div class="squad-viz">
+          <div class="squad-row"><span class="sq-led"></span><span class="sq-n">Barcelona</span><span class="sq-t">Self-learning + admin tooling</span></div>
+          <div class="squad-row"><span class="sq-led" style="animation-delay:.3s"></span><span class="sq-n">Cancun</span><span class="sq-t">Budget + cost tracking</span></div>
+          <div class="squad-row"><span class="sq-led" style="animation-delay:.6s"></span><span class="sq-n">Delhi</span><span class="sq-t">Client portal + WhatsApp intake</span></div>
+          <div class="squad-row"><span class="sq-led" style="animation-delay:.9s"></span><span class="sq-n">Port-Louis</span><span class="sq-t">Vendor &amp; contractor portals</span></div>
+          <div class="squad-row"><span class="sq-led" style="animation-delay:1.2s"></span><span class="sq-n">Provo</span><span class="sq-t">Notifications + document intelligence</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ LIFECYCLE VISION ============================ -->
+<section style="background:#efe9e1">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">The far horizon</p>
+      <h2>One AI spine, from first conversation to final handover.</h2>
+      <p>The same data spine and recommendation engine generalise beyond ops into the whole studio lifecycle.</p>
+    </div>
+    <div class="life reveal">
+      <div class="life-step"><div class="ls-n">01</div><h4>Discover</h4><p>A structured client questionnaire and discovery-call transcripts draft the project brief automatically.</p></div>
+      <div class="life-step"><div class="ls-n">02</div><h4>Design</h4><p>Paste-a-URL builds the spec library; AI assembles moodboard → spec → presentation, grounded in the brief.</p></div>
+      <div class="life-step"><div class="ls-n">03</div><h4>Contract</h4><p>AI-drafted contracts and live scope-departure flags from the embedded contract corpus.</p></div>
+      <div class="life-step"><div class="ls-n">04</div><h4>Procure</h4><p>FF&amp;E lifecycle Concept → Specify → Approve → Procure → Deliver, with one-click POs rolling into the budget.</p></div>
+      <div class="life-step"><div class="ls-n">05</div><h4>Deliver</h4><p>The ball-in-court queue, next-best-action and event timeline become the daily operating surface.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CLOSE ============================ -->
+<section class="dark close">
+  <div class="wrap">
+    <div class="reveal">
+      <svg class="mark-big" viewBox="0 0 170.1 170.1" fill="currentColor" aria-hidden="true"><path d="M71.1,18.9c-6.5.3-13.4,0-19.9.4-3.1.2-7.5.6-9.6,3-1.4,1.7-2.2,5.2-3,6.1-.5.5-.9.5-1.5.4-1-.7.3-7,.6-8.4.4-2.5,1-6.4,1.7-8.8.2-.6.4-1.4,1-1.6.3,0,4.8,1.5,6.1,1.7,1.8.2,4.6.4,6.5.5,16.8.8,39.2,1,55.9,0,3-.2,6.1-.9,9.1-1.4,1.6.3.3,8.8.3,10.3,0,2.2.4,5.4,0,7.4-.3,1.4-2.1,1.4-2.2.8.5-7.5-4.8-9.3-11.1-10.2l-19-.4v38.6c.3.4.6.6,1.1.7,3.1.6,8.3-.2,11.8,0,15.6,1,27.7,10,23,26.9-1.9,7-7.2,11.5-12.3,16.2,17.4,5.5,29.9,22.3,21.1,40.6-4.4,9.1-14.4,14.9-24.2,16l-3.1-5.5c20.6-2.9,15.3-31.6,3.3-41.5-2.5-2.1-8.1-4.8-11.3-4.8h-8.9v20.1l-14.9-22.8-.3-2.9h27.7c3.7,0,7.8-5.2,9-8.5,3.8-11.1-1.1-27.2-14.3-28.6h-33.5c-2.9-1-.8-5.3.3-5.3h10.7V18.9h-.1Z"/></svg>
+      <h2>An <em>AI-native</em> operating system<br>for the built environment.</h2>
+      <p>Capture anywhere. Triage automatically. Decide with full context. Nothing falls through. That's TrueBuild OS — and the command center is only the beginning.</p>
+      <div class="sig">
+        <div><div class="who">Tariq Ismail</div><div class="role">Founder</div></div>
+        <div><div class="who">Bushra Khokhar</div><div class="role">Head of Design</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pg">© <span id="yr"></span> True Build Design · Dubai — TrueBuild OS</footer>
+
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* scroll progress + sticky topbar */
+  var sb = document.getElementById('scrollbar'), tb = document.getElementById('topbar');
+  function onScroll(){
+    var h = document.documentElement;
+    var p = h.scrollTop / (h.scrollHeight - h.clientHeight);
+    sb.style.width = (p*100)+'%';
+    if (h.scrollTop > 640) tb.classList.add('solid'); else tb.classList.remove('solid');
+  }
+  document.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  /* reveal */
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.12, rootMargin:'0px 0px -7% 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* count up */
+  function countUp(el){
+    var target = +el.getAttribute('data-count'), t0=null, dur=1400;
+    function step(ts){ if(!t0)t0=ts; var k=Math.min((ts-t0)/dur,1); var e=1-Math.pow(1-k,3);
+      el.textContent = Math.round(e*target); if(k<1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  var statIO = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ var n=e.target.querySelector('[data-count]'); if(n&&!n.dataset.done){n.dataset.done=1; reduce? n.textContent=n.getAttribute('data-count') : countUp(n);} statIO.unobserve(e.target);} });
+  }, {threshold:0.5});
+  document.querySelectorAll('.stat').forEach(function(s){ statIO.observe(s); });
+
+  /* client progress bar */
+  var cpIO = new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var b=document.querySelector('.cp-bar');if(b)b.classList.add('go');cpIO.disconnect();}})},{threshold:.4});
+  var cpBar=document.querySelector('.cp-bar'); if(cpBar) cpIO.observe(cpBar);
+
+  /* telegram sequential bubbles */
+  var chat = document.getElementById('tgChat');
+  if(chat){
+    var played=false, bubbles=[].slice.call(chat.querySelectorAll('.bubble'));
+    if(reduce){ bubbles.forEach(function(b){b.classList.add('show')}); }
+    else{
+      new IntersectionObserver(function(es,obs){es.forEach(function(e){
+        if(e.isIntersecting && !played){ played=true;
+          bubbles.forEach(function(b,i){ setTimeout(function(){ b.classList.add('show'); chat.scrollTop=chat.scrollHeight; }, 320 + i*640); });
+          obs.unobserve(chat);
+        }});},{threshold:.4}).observe(chat);
+    }
+  }
+
+  /* pipeline step lighting synced to runner (4s loop, 5 steps) */
+  (function(){
+    var steps=[].slice.call(document.querySelectorAll('#pipe .pstep'));
+    if(!steps.length||reduce) return;
+    var i=0;
+    setInterval(function(){ steps.forEach(function(s){s.classList.remove('lit')}); steps[i].classList.add('lit'); i=(i+1)%steps.length; }, 800);
+  })();
+
+  /* hero network: draw subtle connected nodes */
+  (function(){
+    var g=document.getElementById('heroNet'); if(!g||reduce) return;
+    var pts=[]; var N=14;
+    for(var k=0;k<N;k++){ pts.push({x:600+Math.random()*560, y:80+Math.random()*640}); }
+    pts.forEach(function(p,idx){
+      // connect to 2 nearest
+      var d=pts.map(function(q,j){return {j:j,dist:Math.hypot(p.x-q.x,p.y-q.y)}}).filter(function(o){return o.j!==idx}).sort(function(a,b){return a.dist-b.dist}).slice(0,2);
+      d.forEach(function(o){ if(o.dist<260){ var l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',p.x);l.setAttribute('y1',p.y);l.setAttribute('x2',pts[o.j].x);l.setAttribute('y2',pts[o.j].y); l.setAttribute('opacity',0.5); g.appendChild(l);} });
+      var c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',2.4);c.setAttribute('fill','#C3A575');c.setAttribute('opacity',0.8);
+      c.style.animation='nodepulse '+(2.4+Math.random()*2)+'s ease-in-out infinite'; c.style.animationDelay=(Math.random()*2)+'s';
+      g.appendChild(c);
+    });
+  })();
+
+  /* knowledge graph edges (draw on view) */
+  (function(){
+    var svg=document.getElementById('kgSvg'); if(!svg) return;
+    var nodes=[].slice.call(svg.querySelectorAll('.kg-node'));
+    var spine=nodes[0];
+    var edges=document.getElementById('kgEdges');
+    nodes.slice(1).forEach(function(n){
+      var l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',spine.dataset.x);l.setAttribute('y1',spine.dataset.y);
+      l.setAttribute('x2',n.dataset.x);l.setAttribute('y2',n.dataset.y);
+      l.setAttribute('class','kg-edge'); edges.appendChild(l);
+    });
+    var kio=new IntersectionObserver(function(es,obs){es.forEach(function(e){if(e.isIntersecting){
+      [].slice.call(edges.children).forEach(function(l,i){ if(reduce){l.style.strokeDashoffset=0;} else {l.style.animationDelay=(i*0.18)+'s'; l.classList.add('draw');} });
+      obs.disconnect();
+    }})},{threshold:.4});
+    kio.observe(svg);
+  })();
+
+  /* phase track fill on view */
+  (function(){
+    var t=document.getElementById('phaseTrack'); if(!t) return;
+    new IntersectionObserver(function(es,obs){es.forEach(function(e){if(e.isIntersecting){t.classList.add('go');obs.disconnect();}})},{threshold:.4}).observe(t);
+  })();
+</script>
+</body>
+</html>
